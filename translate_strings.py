@@ -9,6 +9,11 @@ from pprint import pprint
 import tiktoken
 from tqdm import tqdm
 from termcolor import colored
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 language_names = {
         "en": "English",
@@ -49,7 +54,7 @@ class LocalizationString:
         }
     
 COST_PER_THOUSAND_TOKENS = 0.01  # $0.01 per 1k tokens
-model = "gpt-4-1106-preview"
+model = "gpt-4o"  # Fixed model name
 
 def chunk_requests(requests, chunk_size):
     for i in range(0, len(requests), chunk_size):
@@ -123,9 +128,7 @@ def translate_xccstrings_file(input_file, target_lang, source_lang, overwrite_fi
     else:
         api_key = os.environ["OPENAI_API_KEY"]
 
-    openai_client = OpenAI(
-        api_key=api_key,
-    )
+    openai_client = OpenAI(api_key=api_key)
     try:
         source_language_name = language_names[source_lang]
     except KeyError:
@@ -172,8 +175,9 @@ def translate_xccstrings_file(input_file, target_lang, source_lang, overwrite_fi
         if target_lang not in localizations.keys():
             if source_localization.get("variations") is None and source_localization.get("stringUnit") is not None:
                 string_value = source_localization.get("stringUnit").get("value")
-                strings_to_translate.append(LocalizationString(string_value, comment))
-                paths.append((key, target_lang, None))
+                if string_value:  # Add this check to ensure we have a value
+                    strings_to_translate.append(LocalizationString(string_value, comment))
+                    paths.append((key, target_lang, None))
             elif source_localization.get("variations") is not None:
                 device_variations = source_localization["variations"]
                 for variation_key, variation_value in device_variations.items():

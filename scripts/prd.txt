@@ -1,0 +1,274 @@
+# GPT-Localize-iOS PRD
+
+<context>
+# Overview
+GPT-Localize-iOS is a command-line tool that automates the localization of iOS apps by translating .xcstrings files using OpenAI's GPT-4. It solves the time-consuming and costly problem of manually translating app strings into multiple languages. The tool is designed for iOS developers and localization teams who need to quickly and accurately translate their apps while maintaining context and quality.
+
+# Core Features
+1. Automated String Translation
+   - What: Translate .xcstrings files to any supported language using GPT-4
+   - Why: Manual translation is slow, expensive, and error-prone
+   - How: Parse .xcstrings, batch process through GPT-4, maintain file structure
+
+2. Context-Aware Translation
+   - What: Use string comments and app context for accurate translations
+   - Why: Direct translation often misses nuance and context
+   - How: Include comments and app description in GPT prompts
+
+3. Cost Management
+   - What: Estimate and track translation costs
+   - Why: Control expenses and provide transparency
+   - How: Token counting, batch optimization, cost calculations
+
+4. Multi-Device Support
+   - What: Handle device-specific string variations
+   - Why: iOS apps often need different strings for different devices
+   - How: Parse and maintain device-specific structures in .xcstrings
+
+# User Experience
+User Personas:
+1. iOS Developer
+   - Needs: Quick, accurate translations with minimal setup
+   - Pain Points: Cost, time, maintaining string structure
+   - Goals: Automate localization while maintaining quality
+
+2. Localization Manager
+   - Needs: Cost control, quality assurance
+   - Pain Points: Context preservation, consistency
+   - Goals: Efficient, scalable localization process
+
+Key User Flows:
+1. Basic Translation
+   ```
+   Install → Set API Key → Run Command → Review Cost → Confirm → Get Translations
+   ```
+
+2. Advanced Usage
+   ```
+   Configure Context → Set Parameters → Run → Monitor Progress → Validate → Deploy
+   ```
+
+UI/UX Considerations:
+- Clear command-line interface
+- Progress indicators for long operations
+- Cost estimates before commitment
+- Detailed error messages
+- Backup and safety measures
+</context>
+
+<PRD>
+# Technical Architecture
+
+## System Components
+1. File Processing Module
+   - JSON parsing and validation
+   - String extraction and injection
+   - File backup and safety checks
+
+2. Translation Engine
+   - OpenAI client (v1.72.0)
+   - Prompt management
+   - Response handling
+   - Error recovery
+
+3. Cost Management System
+   - Token counting
+   - Cost calculation
+   - Batch optimization
+
+4. Context Management
+   - App context handling
+   - Comment extraction
+   - Device variation support
+
+## Data Models
+1. LocalizationString
+   ```python
+   {
+     string: str,
+     comment: str,
+     context: str,
+     device_variations: dict
+   }
+   ```
+
+2. TranslationBatch
+   ```python
+   {
+     strings: List[LocalizationString],
+     source_lang: str,
+     target_lang: str,
+     token_count: int
+   }
+   ```
+
+## APIs and Integrations
+1. OpenAI GPT-4
+   - Chat completions API
+   - JSON mode for structured output
+   - Error handling and retries
+
+2. File System
+   - Safe read/write operations
+   - Backup management
+   - Path handling
+
+## Infrastructure Requirements
+- Python 3.x runtime
+- OpenAI API access
+- Sufficient disk space for backups
+- Memory for large file processing
+
+# Development Roadmap
+
+## Phase 1: Foundation (MVP)
+1. Basic File Operations
+   - Parse .xcstrings files
+   - Extract strings and comments
+   - Validate file structure
+
+2. Core Translation
+   - OpenAI client setup
+   - Basic prompt engineering
+   - Simple string translation
+
+3. File Writing
+   - Update .xcstrings structure
+   - Maintain file integrity
+   - Basic error handling
+
+## Phase 2: Enhanced Translation
+1. Context Management
+   - App context integration
+   - Comment processing
+   - Device variation support
+
+2. Batch Processing
+   - Optimize batch sizes
+   - Progress tracking
+   - Error recovery
+
+3. Cost Controls
+   - Token counting
+   - Cost estimation
+   - User confirmation flow
+
+## Phase 3: Quality and Safety
+1. Validation System
+   - Input validation
+   - Output verification
+   - Structure preservation
+
+2. Error Handling
+   - Comprehensive error messages
+   - Recovery mechanisms
+   - Logging system
+
+3. Backup System
+   - Automatic backups
+   - Restore capabilities
+   - File comparison
+
+## Phase 4: Advanced Features
+1. Translation Memory
+   - Cache common translations
+   - Reuse previous translations
+   - Consistency checking
+
+2. Quality Tools
+   - Translation validation
+   - Context verification
+   - Format checking
+
+3. Performance Optimization
+   - Parallel processing
+   - Memory optimization
+   - Response caching
+
+# Logical Dependency Chain
+
+## Foundation Layer
+1. File parsing and validation
+2. OpenAI client integration
+3. Basic string translation
+4. File writing
+
+## Core Features Layer
+1. Batch processing
+2. Context management
+3. Cost estimation
+4. Progress tracking
+
+## Enhancement Layer
+1. Error handling
+2. Backup system
+3. Validation tools
+4. Performance optimization
+
+## Advanced Layer
+1. Translation memory
+2. Quality tools
+3. Parallel processing
+4. Caching system
+
+# Risks and Mitigations
+
+## Technical Risks
+1. API Reliability
+   - Risk: OpenAI API downtime or errors
+   - Mitigation: Retry logic, error handling, batch recovery
+
+2. File Corruption
+   - Risk: Incomplete writes or parsing errors
+   - Mitigation: Backup system, validation checks
+
+3. Memory Usage
+   - Risk: Large files causing memory issues
+   - Mitigation: Batch processing, streaming
+
+## MVP Risks
+1. Translation Quality
+   - Risk: Poor context understanding
+   - Mitigation: Context-aware prompts, validation
+
+2. Cost Control
+   - Risk: Unexpected API costs
+   - Mitigation: Estimation, batching, user confirmation
+
+3. User Adoption
+   - Risk: Complex setup or usage
+   - Mitigation: Clear documentation, simple CLI
+
+# Appendix
+
+## Research Findings
+1. OpenAI API
+   - GPT-4 provides best translation quality
+   - JSON mode ensures structured output
+   - Rate limits and retry requirements
+
+2. .xcstrings Format
+   - JSON-based structure
+   - Device variation support
+   - State management requirements
+
+## Technical Specifications
+1. Dependencies
+   ```
+   openai==1.72.0
+   tqdm
+   tiktoken
+   argparse
+   ```
+
+2. Environment
+   ```
+   OPENAI_API_KEY required
+   Python 3.x
+   ```
+
+3. Performance Targets
+   - Process 1000 strings < 5 minutes
+   - Memory usage < 500MB
+   - 99.9% translation success rate
+</PRD> 
