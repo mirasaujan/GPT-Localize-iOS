@@ -1,0 +1,95 @@
+Metadata-Version: 2.4
+Name: gpt-localize-ios
+Version: 0.1.0
+Summary: A tool to automatically translate iOS .xcstrings files using GPT-4
+Home-page: https://github.com/yourusername/GPT-Localize-iOS
+Author: Your Name
+Author-email: your.email@example.com
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Localization
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: openai==1.72.0
+Requires-Dist: tqdm==4.66.1
+Requires-Dist: termcolor==2.4.0
+Requires-Dist: tiktoken==0.5.2
+Requires-Dist: argparse
+Requires-Dist: python-dotenv==1.1.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# GPT-Localize-iOS
+
+🇺🇸🇩🇪🇪🇸🇫🇷🇮🇹🇯🇵🇰🇷🇵🇹🇷🇺🇨🇳🇦🇷🇩🇰🇫🇮🇬🇷🇮🇳🇭🇺
+
+## Reach more users for your app with localization!
+
+GPT-Localize-iOS is a tool designed to automatically translate your `.xcstrings` files into any language, using the power and cost-effectiveness of OpenAI's GPT-4 API. This script can even handle translations tailored to various devices, ensuring your iOS app localization is seamless and accurate.
+
+## Features
+
+- **Multiple Language Support:** Translate your strings into tons of languages in record time
+- **Contextual Translation:** The translation takes into account the comments for your strings and an overall app context string
+- **Multi-Device Translation:** Supports translation of string catalog's device-specific strings
+- **OpenAI GPT-4 Integration:** Utilizes the latest GPT-4 model for accurate and contextual translations.
+- **Cost Estimation:** Provides an estimate of the translation cost before proceeding.
+
+
+## Prerequisites
+
+To use GPT-Localize-iOS, you must set up an OpenAI API key. Here's how to do it:
+
+1. Visit [OpenAI's API](https://openai.com/api/) page and sign up for an API key.
+2. Once you have your API key, you can set it as an environment variable `OPENAI_API_KEY` on your system. Alternatively, the script will prompt you to enter it when needed.
+
+Ideally, you should have comments added for each localization key. This will greatly help GPT to understand what you are trying to achieve with each string, and will improve the outcome of the translation.
+
+## Getting started
+
+### Recommended: Use venv or virtualenv
+
+Set up a virtual environment with venv or virtualenv first to isolate your dependencies.
+
+### Install dependencies
+
+Run `pip install -r requirements.txt` to install the necessary requirements.
+
+
+## Usage
+
+Ensure you have Python 3.x installed on your system to run the script. Here is an example command line invocation:
+
+```sh
+python3 translate_strings.py --input-file=path/to/your/file.xcstrings --target-language-code=es --source-language-code=en
+```
+
+### Command Line Flags
+
+- `--input-file`: The path to your `.xcstrings` file to be translated.
+- `--target-language-code`: The target language code (e.g., 'es' for Spanish).
+- `--source-language-code`: The source language code of your strings (e.g., 'en' for English).
+- `--overwrite-file`: (Optional) If set, the script will overwrite the original file with the translations.
+- `--no-cost-prompt`: (Optional) If set to false, the script will prompt you for confirmation before proceeding with the translation, based on the estimated cost.
+- `--app-context-path`: (Optional) Information about the app being translated in order to provide the best translation quality.
+
+## Additional Resources
+
+For more information on working with `.xcstrings` files, check out Apple's WWDC 2023 video, ["Discovering String Catalogs"](https://developer.apple.com/videos/play/wwdc2023/10155/).
+
+## Disclaimer
+
+This tool uses OpenAI's API for translations and may incur costs based on usage. Please check the [OpenAI pricing](https://openai.com/pricing/) for more details.
