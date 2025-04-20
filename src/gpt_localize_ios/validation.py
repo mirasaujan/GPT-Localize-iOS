@@ -179,4 +179,71 @@ def validate_structure_preservation(source_data: Dict[str, Any], translated_data
                     errors.append(f"Missing stringUnit in variation '{var_key}' for string '{key}', language '{lang}' in translation")
                     continue
                     
-    return len(errors) == 0, errors 
+    return len(errors) == 0, errors
+
+def validate_translation_counts(data: Dict[str, Any], source_lang: str, target_lang: str) -> Tuple[bool, Dict[str, int]]:
+    """
+    Validates that all strings have translations from source to target language.
+    
+    Args:
+        data: Dictionary containing the .xcstrings data
+        source_lang: Source language code
+        target_lang: Target language code
+        
+    Returns:
+        Tuple of (is_complete, stats dictionary)
+    """
+    stats = {
+        "total_strings": 0,
+        "translated_strings": 0,
+        "missing_translations": 0,
+        "new_translations": 0
+    }
+    
+    for key, value in data.get("strings", {}).items():
+        localizations = value.get("localizations", {})
+        
+        # Skip if source language not present
+        if source_lang not in localizations:
+            continue
+            
+        stats["total_strings"] += 1
+        
+        # Check if target language exists
+        if target_lang not in localizations:
+            stats["missing_translations"] += 1
+            continue
+            
+        # Check string unit state
+        target_unit = localizations[target_lang].get("stringUnit", {})
+        state = target_unit.get("state", "")
+        
+        if state == "translated":
+            stats["translated_strings"] += 1
+        elif state == "new":
+            stats["new_translations"] += 1
+        else:
+            stats["missing_translations"] += 1
+            
+        # Check variations if present
+        source_vars = localizations[source_lang].get("variations", {})
+        target_vars = localizations[target_lang].get("variations", {})
+        
+        for var_key in source_vars:
+            stats["total_strings"] += 1
+            
+            if var_key not in target_vars:
+                stats["missing_translations"] += 1
+                continue
+                
+            var_unit = target_vars[var_key].get("stringUnit", {})
+            state = var_unit.get("state", "")
+            
+            if state == "translated":
+                stats["translated_strings"] += 1
+            elif state == "new":
+                stats["new_translations"] += 1
+            else:
+                stats["missing_translations"] += 1
+    
+    return stats["missing_translations"] == 0 and stats["new_translations"] == 0, stats 

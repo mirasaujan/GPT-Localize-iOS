@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
 
-from . import LocalizationString, TranslationResult
+from . import LocalizationString, TranslationResult, TranslationBatch
 
 logger = logging.getLogger(__name__)
 
@@ -42,65 +42,91 @@ class XCStringsProcessor:
         Returns a list of (LocalizationString, path) tuples.
         """
         logger.debug(f"Looking for strings to translate from {source_lang} to {target_lang}")
+        logger.debug(f"Total keys in strings: {len(self.data.get('strings', {}))}")
         strings = []
         for key, value in self.data.get("strings", {}).items():
-            logger.debug(f"Processing key: {key}")
+            logger.debug(f"\nProcessing key: {key}")
             if not isinstance(value, dict):
                 logger.debug(f"Skipping {key}: not a dictionary")
                 continue
 
-            # Handle base string
-            if source_lang in value.get("localizations", {}):
-                source = value["localizations"][source_lang]
-                logger.debug(f"Found source localization for {key}: {source}")
-                if "stringUnit" not in source:
-                    logger.debug(f"Skipping {key}: no stringUnit in source")
-                    continue
+            # Get source string from source language localization or key
+            localizations = value.get("localizations", {})
+            source_localization = localizations.get(source_lang, {})
+            
+            # If no source localization exists, create it using the key
+            if not source_localization or "stringUnit" not in source_localization:
+                source_string = key
+                # Create source language localization
+                self.data["strings"][key].setdefault("localizations", {}).setdefault(source_lang, {})["stringUnit"] = {
+                    "value": source_string,
+                    "state": "translated"
+                }
+                logger.debug(f"Created source language localization for {key}")
+            else:
+                source_string = source_localization["stringUnit"]["value"]
+            
+            comment = value.get("extractionState", "")
+            logger.debug(f"Initial state - key: {key}, source: {source_string}, comment: {comment}")
 
-                source_string = source["stringUnit"]["value"]
-                comment = value.get("extractionState", "")
-
-                # Check if translation is needed
-                target_data = value.get("localizations", {}).get(target_lang, {})
-                if not target_data or target_data.get("stringUnit", {}).get("state") == "new":
-                    logger.debug(f"Adding {key} for translation: {source_string}")
-                    strings.append((
-                        LocalizationString(source_string, comment),
-                        (key, target_lang, None)
-                    ))
-                else:
-                    logger.debug(f"Skipping {key}: already translated")
+            # Check if translation is needed
+            if target_lang not in localizations:
+                logger.debug(f"Adding {key} for translation: {source_string}")
+                strings.append((
+                    LocalizationString(source_string, comment),
+                    (key, target_lang, None)
+                ))
+            else:
+                logger.debug(f"Skipping {key}: already has {target_lang} translation")
 
             # Handle variations
             variations = value.get("variations", {})
-            for var_key, var_data in variations.items():
-                logger.debug(f"Processing variation {var_key} for {key}")
-                if not isinstance(var_data, dict):
-                    logger.debug(f"Skipping variation {var_key}: not a dictionary")
-                    continue
-
-                if source_lang in var_data.get("localizations", {}):
-                    source = var_data["localizations"][source_lang]
-                    if "stringUnit" not in source:
-                        logger.debug(f"Skipping variation {var_key}: no stringUnit in source")
+            if variations:
+                logger.debug(f"Processing variations for {key}: {list(variations.keys())}")
+                for var_key, var_data in variations.items():
+                    logger.debug(f"\nProcessing variation {var_key} for {key}")
+                    if not isinstance(var_data, dict):
+                        logger.debug(f"Skipping variation {var_key}: not a dictionary")
                         continue
 
-                    source_string = source["stringUnit"]["value"]
+                    # Get source string from the source language variation or create it
+                    var_localizations = var_data.get("localizations", {})
+                    var_source = var_localizations.get(source_lang, {})
+                    
+                    if not var_source or "stringUnit" not in var_source:
+                        # For variations, use the stringUnit value if available, otherwise use key
+                        source_string = var_data.get("stringUnit", {}).get("value", key)
+                        # Create source language localization for variation
+                        self.data["strings"][key]["variations"][var_key].setdefault("localizations", {}).setdefault(source_lang, {})["stringUnit"] = {
+                            "value": source_string,
+                            "state": "translated"
+                        }
+                        logger.debug(f"Created source language localization for variation {var_key}")
+                    else:
+                        source_string = var_source["stringUnit"]["value"]
+                    
                     device = var_data.get("device", "")
                     comment = f"{value.get('extractionState', '')} [Variation for {device}]"
+                    logger.debug(f"Found variation source string: {source_string}")
 
                     # Check if translation is needed
-                    target_data = var_data.get("localizations", {}).get(target_lang, {})
-                    if not target_data or target_data.get("stringUnit", {}).get("state") == "new":
+                    if target_lang not in var_localizations:
                         logger.debug(f"Adding variation {var_key} for translation: {source_string}")
                         strings.append((
                             LocalizationString(source_string, comment),
                             (key, target_lang, (var_key, device))
                         ))
                     else:
-                        logger.debug(f"Skipping variation {var_key}: already translated")
+                        logger.debug(f"Skipping variation {var_key}: already has {target_lang} translation")
 
-        logger.debug(f"Found {len(strings)} strings to translate")
+        # Save the file to persist any new source language localizations
+        self.save_file()
+
+        logger.debug(f"\nFound {len(strings)} strings to translate")
+        if strings:
+            logger.debug("Strings to translate:")
+            for string, (key, lang, var) in strings:
+                logger.debug(f"- {key}: {string.value}")
         return strings
 
     def update_translations(self, results: List[TranslationResult]) -> None:
@@ -125,3 +151,58 @@ class XCStringsProcessor:
             }
 
         self.save_file()
+
+    def get_strings_for_translation_chunked(self, source_lang: str, target_lang: str, chunk_size: int = 30) -> List[TranslationBatch]:
+        """
+        Extract strings that need translation and break them into chunks based on word count.
+        
+        Args:
+            source_lang: Source language code
+            target_lang: Target language code
+            chunk_size: Maximum number of words per chunk
+            
+        Returns:
+            List of TranslationBatch objects
+        """
+        all_strings = self.get_strings_for_translation(source_lang, target_lang)
+        
+        # Initialize chunk tracking
+        current_chunk_strings = []
+        current_chunk_paths = []
+        current_word_count = 0
+        chunks = []
+        
+        for string, path in all_strings:
+            words = len(string.value.split())
+            
+            if current_word_count + words > chunk_size:
+                # Create new batch
+                chunks.append(TranslationBatch(
+                    strings=current_chunk_strings,
+                    paths=current_chunk_paths,
+                    source_lang=source_lang,
+                    target_lang=target_lang
+                ))
+                current_chunk_strings = []
+                current_chunk_paths = []
+                current_word_count = 0
+                
+            current_chunk_strings.append(string)
+            current_chunk_paths.append(path)
+            current_word_count += words
+        
+        # Add remaining strings
+        if current_chunk_strings:
+            chunks.append(TranslationBatch(
+                strings=current_chunk_strings,
+                paths=current_chunk_paths,
+                source_lang=source_lang,
+                target_lang=target_lang
+            ))
+        
+        # Update chunk metadata
+        for i, chunk in enumerate(chunks):
+            chunk.chunk_index = i
+            chunk.total_chunks = len(chunks)
+        
+        return chunks

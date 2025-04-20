@@ -104,6 +104,61 @@ Respond with translations in this exact format:
             logger.error(f"Full error: {repr(e)}")
             raise
 
+    def translate_batch_with_retry(self, batch: TranslationBatch, max_retries: int = 3) -> List[TranslationResult]:
+        """
+        Translate a batch with retry logic for failed strings.
+        
+        Args:
+            batch: The batch of strings to translate
+            max_retries: Maximum number of retry attempts for failed strings
+            
+        Returns:
+            List of TranslationResult objects
+        """
+        retries = 0
+        failed_strings = []
+        results = []
+        
+        while retries < max_retries and (retries == 0 or failed_strings):
+            try:
+                if retries == 0:
+                    current_batch = batch
+                else:
+                    # Create new batch with just failed strings
+                    current_batch = TranslationBatch(
+                        strings=[s for s, p in zip(batch.strings, batch.paths) if p in failed_strings],
+                        paths=failed_strings,
+                        source_lang=batch.source_lang,
+                        target_lang=batch.target_lang,
+                        chunk_index=batch.chunk_index,
+                        total_chunks=batch.total_chunks
+                    )
+                
+                batch_results = self.translate_batch(current_batch)
+                
+                # Filter out any previously failed strings that succeeded
+                if retries > 0:
+                    results = [r for r in results if r.path not in [br.path for br in batch_results]]
+                
+                results.extend(batch_results)
+                
+                # Update failed strings
+                failed_strings = [r.path for r in batch_results if r.state == "error"]
+                
+                if not failed_strings:
+                    break
+                    
+                retries += 1
+                logger.warning(f"Retry {retries}/{max_retries} for {len(failed_strings)} failed strings")
+                
+            except Exception as e:
+                logger.error(f"Batch translation error: {str(e)}")
+                retries += 1
+                if retries == max_retries:
+                    raise
+        
+        return results
+
     def get_usage_stats(self) -> Dict[str, Any]:
         """Get the current usage statistics."""
         return {
