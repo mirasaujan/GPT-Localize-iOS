@@ -40,7 +40,7 @@ Run `pip install -r requirements.txt` to install the necessary requirements.
 Ensure you have Python 3.x installed on your system to run the script. Here is an example command line invocation:
 
 ```sh
-python3 translate_strings.py --input-file=path/to/your/file.xcstrings --target-language-code=es --source-language-code=en
+python -m gpt_localize_ios.cli --input-file={path to .xcstrings file} --source-language-code=en --target-language-code=ru
 ```
 
 ### Command Line Flags
@@ -48,8 +48,6 @@ python3 translate_strings.py --input-file=path/to/your/file.xcstrings --target-l
 - `--input-file`: The path to your `.xcstrings` file to be translated.
 - `--target-language-code`: The target language code (e.g., 'es' for Spanish).
 - `--source-language-code`: The source language code of your strings (e.g., 'en' for English).
-- `--overwrite-file`: (Optional) If set, the script will overwrite the original file with the translations.
-- `--no-cost-prompt`: (Optional) If set to false, the script will prompt you for confirmation before proceeding with the translation, based on the estimated cost.
 - `--app-context-path`: (Optional) Information about the app being translated in order to provide the best translation quality.
 
 ## Additional Resources
